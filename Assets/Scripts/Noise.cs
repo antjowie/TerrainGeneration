@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Noise
+public static class Noise
 {
     // Lacunarity controls the increase in frequency of each octave
     // persistance controls the decrease in amplitude of each octave
