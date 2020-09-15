@@ -4,20 +4,24 @@ using UnityEngine;
 
 public static class MeshGenerator
 {
-    public static MeshData GenerateTerrainMesh(float[,] heightMap, float heightMultiplier, AnimationCurve heightCurve)
+    // simplificationMultiplier represents the LOD. 
+    public static MeshData GenerateTerrainMesh(float[,] heightMap, int simplificationMultiplier, float heightMultiplier, AnimationCurve heightCurve)
     {
         int width = heightMap.GetLength(0);
         int height = heightMap.GetLength(1);
-
-        MeshData meshData = new MeshData(width, height);
+        
+        int simplificationFactor = simplificationMultiplier == 0 ? 1 : simplificationMultiplier * 2;
+        int verticesPerLine = (width - 1) / simplificationFactor + 1;
+        
+        MeshData meshData = new MeshData(verticesPerLine, verticesPerLine);
 
         float topLeftX = ((float)width - 1) / -2;
         float topLeftZ = ((float)height - 1) / 2;
 
         int vertexIndex = 0;
 
-        for (int y = 0; y < height; y++)
-            for (int x = 0; x < width; x++)
+        for (int y = 0; y < height; y += simplificationFactor)
+            for (int x = 0; x < width; x += simplificationFactor)
             {
                 meshData.vertices[vertexIndex] = new Vector3(topLeftX + x, heightCurve.Evaluate(heightMap[x, y]) * heightMultiplier, topLeftZ - y);
                 meshData.uvs[vertexIndex] = new Vector2(x / (float)width, y / (float)height);
@@ -25,8 +29,8 @@ public static class MeshGenerator
                 if(!(x == width - 1 || y == height - 1))
                 {
                     int i = vertexIndex;
-                    meshData.AddIndices(i, i + width + 1, i + width);
-                    meshData.AddIndices(i + width + 1, i, i + 1);
+                    meshData.AddIndices(i, i + verticesPerLine + 1, i + verticesPerLine);
+                    meshData.AddIndices(i + verticesPerLine + 1, i, i + 1);
                 }
 
                 vertexIndex++;
