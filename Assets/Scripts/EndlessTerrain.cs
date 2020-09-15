@@ -9,7 +9,7 @@ public class EndlessTerrain : MonoBehaviour
     public static Vector2 viewerPosition;
 
     const int chunkSize = MapGenerator.mapChunkSize - 1;
-    const int chunkViewDst = 450;
+    const int chunkViewDst = 500;
     int chunkViewCoordDst;
 
     Dictionary<Vector2, ChunkData> chunks = new Dictionary<Vector2, ChunkData>();
@@ -17,7 +17,7 @@ public class EndlessTerrain : MonoBehaviour
 
     void Start()
     {
-        chunkViewCoordDst = Mathf.RoundToInt((float)chunkSize / (float)chunkViewDst);
+        chunkViewCoordDst = Mathf.RoundToInt(chunkViewDst / chunkSize);
     }
 
     void Update()
