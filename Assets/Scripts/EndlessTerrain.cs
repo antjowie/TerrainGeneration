@@ -7,6 +7,8 @@ public class EndlessTerrain : MonoBehaviour
 {
     public Transform viewer;
     public static Vector2 viewerPosition;
+    public static MapGenerator mapGenerator;
+    public Material material;
 
     const int chunkSize = MapGenerator.mapChunkSize - 1;
     const int chunkViewDst = 500;
@@ -17,6 +19,7 @@ public class EndlessTerrain : MonoBehaviour
 
     void Start()
     {
+        mapGenerator = FindObjectOfType<MapGenerator>();
         chunkViewCoordDst = Mathf.RoundToInt(chunkViewDst / chunkSize);
     }
 
@@ -52,7 +55,7 @@ public class EndlessTerrain : MonoBehaviour
                 }
                 else
                 {
-                    chunks.Add(chunkCoord, new ChunkData(chunkCoord, chunkSize, transform));
+                    chunks.Add(chunkCoord, new ChunkData(chunkCoord, chunkSize, transform, material));
                 }
             }
     }
@@ -62,19 +65,38 @@ public class EndlessTerrain : MonoBehaviour
         Vector2 position;
 
         GameObject mesh;
+        MeshRenderer meshRenderer;
+        MeshFilter meshFilter;
+        
         Bounds bounds;
 
-        public ChunkData(Vector2 coord, int size, Transform transform)
+        public ChunkData(Vector2 coord, int size, Transform transform, Material material)
         {
             position = coord * size;
             bounds = new Bounds(position, Vector2.one * size);
 
-            mesh = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            mesh = new GameObject("Terrain Chunk");
+            meshRenderer = mesh.AddComponent<MeshRenderer>();
+            meshFilter = mesh.AddComponent<MeshFilter>();
+            
+            meshRenderer.material = material;
             mesh.transform.position = new Vector3(position.x,0,position.y);
-            mesh.transform.localScale = Vector3.one * size / 10f;
             mesh.transform.parent = transform;
             SetVisible(false);
+            
+            EndlessTerrain.mapGenerator.RequestMapData(OnMapDataRequest,position);
         }
+
+        void OnMapDataRequest(MapData mapData)
+        {
+            EndlessTerrain.mapGenerator.RequestMeshData(OnMeshDataRequest,mapData.heightMap);
+        }
+        
+        void OnMeshDataRequest(MeshData meshData)
+        {
+            meshFilter.mesh = meshData.CreateMesh();
+        }
+        
 
         public void UpdateChunkInRange()
         {

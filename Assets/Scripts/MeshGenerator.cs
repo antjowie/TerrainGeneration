@@ -5,8 +5,9 @@ using UnityEngine;
 public static class MeshGenerator
 {
     // simplificationMultiplier represents the LOD. 
-    public static MeshData GenerateTerrainMesh(float[,] heightMap, int simplificationMultiplier, float heightMultiplier, AnimationCurve heightCurve)
+    public static MeshData GenerateTerrainMesh(float[,] heightMap, int simplificationMultiplier, float heightMultiplier, AnimationCurve _heightCurve)
     {
+        AnimationCurve heightCurve = new AnimationCurve(_heightCurve.keys);
         int width = heightMap.GetLength(0);
         int height = heightMap.GetLength(1);
         
