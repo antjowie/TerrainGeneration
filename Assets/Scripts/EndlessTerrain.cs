@@ -5,21 +5,25 @@ using UnityEngine;
 
 public class EndlessTerrain : MonoBehaviour
 {
+    public LODInfo[] lodInfos;
+
     public Transform viewer;
     public static Vector2 viewerPosition;
     public static MapGenerator mapGenerator;
     public Material material;
 
     const int chunkSize = MapGenerator.mapChunkSize - 1;
-    const int chunkViewDst = 500;
+    static int chunkViewDst;
     int chunkViewCoordDst;
 
-    Dictionary<Vector2, ChunkData> chunks = new Dictionary<Vector2, ChunkData>();
-    List<ChunkData> chunksInPreviousFrame = new List<ChunkData>();
+    Dictionary<Vector2, TerrainChunk> chunks = new Dictionary<Vector2, TerrainChunk>();
+    List<TerrainChunk> chunksInPreviousFrame = new List<TerrainChunk>();
 
     void Start()
     {
         mapGenerator = FindObjectOfType<MapGenerator>();
+    
+        chunkViewDst = lodInfos[lodInfos.Length - 1].distance;    
         chunkViewCoordDst = Mathf.RoundToInt(chunkViewDst / chunkSize);
     }
 
@@ -55,12 +59,12 @@ public class EndlessTerrain : MonoBehaviour
                 }
                 else
                 {
-                    chunks.Add(chunkCoord, new ChunkData(chunkCoord, chunkSize, transform, material));
+                    chunks.Add(chunkCoord, new TerrainChunk(chunkCoord, chunkSize, transform, material, lodInfos));
                 }
             }
     }
 
-    public class ChunkData
+    public class TerrainChunk
     {
         Vector2 position;
 
@@ -68,10 +72,24 @@ public class EndlessTerrain : MonoBehaviour
         MeshRenderer meshRenderer;
         MeshFilter meshFilter;
         
+        MapData mapData;
+        bool hasMapData;
+        
+        LODMesh[] lodMeshes;
+        LODInfo[] lodInfos;
+        int lodIndex = -1;
+        
         Bounds bounds;
 
-        public ChunkData(Vector2 coord, int size, Transform transform, Material material)
+        public TerrainChunk(Vector2 coord, int size, Transform transform, Material material, LODInfo[] lodInfos)
         {
+            this.lodInfos = lodInfos;
+            lodMeshes = new LODMesh[lodInfos.Length];
+            for(int i = 0; i < lodInfos.Length; i++)
+            {
+                lodMeshes[i] = new LODMesh(lodInfos[i].lod);
+            }
+            
             position = coord * size;
             bounds = new Bounds(position, Vector2.one * size);
 
@@ -89,21 +107,47 @@ public class EndlessTerrain : MonoBehaviour
 
         void OnMapDataRequest(MapData mapData)
         {
-            EndlessTerrain.mapGenerator.RequestMeshData(OnMeshDataRequest,mapData.heightMap);
-            Texture2D texture = TextureGenerator.CreateTextureFromColorMap(mapData.colorMap,chunkSize + 1,chunkSize + 1);
-            meshRenderer.material.SetTexture("_BaseMap", texture);
+            this.mapData = mapData;
+            hasMapData = true;
+            // EndlessTerrain.mapGenerator.RequestMeshData(OnMeshDataRequest,mapData.heightMap,);
+            // Texture2D texture = TextureGenerator.CreateTextureFromColorMap(mapData.colorMap,chunkSize + 1,chunkSize + 1);
+            // meshRenderer.material.SetTexture("_BaseMap", texture);
         }
         
-        void OnMeshDataRequest(MeshData meshData)
-        {
-            meshFilter.mesh = meshData.CreateMesh();
-        }
+        // void OnMeshDataRequest(MeshData meshData)
+        // {
+        //     meshFilter.mesh = meshData.CreateMesh();
+        // }
         
         public void UpdateChunkInRange()
         {
-            float toChunkDst = Mathf.Sqrt(bounds.SqrDistance(viewerPosition));
+            if(!hasMapData) return;
+            
+            float sqrToChunkDst = bounds.SqrDistance(viewerPosition);
+            float toChunkDst = Mathf.Sqrt(sqrToChunkDst);
             bool visible = toChunkDst <= chunkViewDst;
             SetVisible(visible);
+            
+            if(visible)
+            {
+                for(int i = 0; i < lodInfos.Length; i++)
+                {
+                    if(toChunkDst <= lodInfos[i].distance)
+                    {
+                        if(lodMeshes[i].hasMesh)
+                        {
+                            meshFilter.mesh = lodMeshes[i].mesh;
+                            lodIndex = i;
+                        }
+                        else if (!lodMeshes[i].hasRequestedMesh)
+                        {
+                            mapGenerator.RequestMeshData(lodMeshes[i].OnMeshDataRequest,mapData.heightMap,lodInfos[i].lod);
+                            lodMeshes[i].hasRequestedMesh = true;
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         public void SetVisible(bool visible)
@@ -115,5 +159,37 @@ public class EndlessTerrain : MonoBehaviour
         {
             return mesh.activeSelf;
         }
+    }
+    
+    class LODMesh
+    {
+        public Mesh mesh;
+        public bool hasRequestedMesh;
+        public bool hasMesh;
+        public int lod;
+        
+        public LODMesh(int lod)
+        {
+            this.lod = lod;
+        }
+        
+        public void OnMeshDataRequest(MeshData meshData)
+        {
+            mesh = meshData.CreateMesh();
+            hasMesh = true;
+        }
+    }
+}
+
+[System.Serializable]
+public class LODInfo
+{
+    public int lod;
+    public int distance;
+
+    public LODInfo(int lod, int distance)
+    {
+        this.lod = lod;
+        this.distance = distance;
     }
 }
