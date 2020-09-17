@@ -90,6 +90,8 @@ public class EndlessTerrain : MonoBehaviour
         void OnMapDataRequest(MapData mapData)
         {
             EndlessTerrain.mapGenerator.RequestMeshData(OnMeshDataRequest,mapData.heightMap);
+            Texture2D texture = TextureGenerator.CreateTextureFromColorMap(mapData.colorMap,chunkSize + 1,chunkSize + 1);
+            meshRenderer.material.SetTexture("_BaseMap", texture);
         }
         
         void OnMeshDataRequest(MeshData meshData)
@@ -97,7 +99,6 @@ public class EndlessTerrain : MonoBehaviour
             meshFilter.mesh = meshData.CreateMesh();
         }
         
-
         public void UpdateChunkInRange()
         {
             float toChunkDst = Mathf.Sqrt(bounds.SqrDistance(viewerPosition));
