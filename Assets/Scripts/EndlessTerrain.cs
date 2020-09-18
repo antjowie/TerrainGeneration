@@ -110,8 +110,8 @@ public class EndlessTerrain : MonoBehaviour
             this.mapData = mapData;
             hasMapData = true;
             // EndlessTerrain.mapGenerator.RequestMeshData(OnMeshDataRequest,mapData.heightMap,);
-            // Texture2D texture = TextureGenerator.CreateTextureFromColorMap(mapData.colorMap,chunkSize + 1,chunkSize + 1);
-            // meshRenderer.material.SetTexture("_BaseMap", texture);
+            Texture2D texture = TextureGenerator.CreateTextureFromColorMap(mapData.colorMap,chunkSize + 1,chunkSize + 1);
+            meshRenderer.material.SetTexture("_BaseMap", texture);
         }
         
         // void OnMeshDataRequest(MeshData meshData)
@@ -134,7 +134,7 @@ public class EndlessTerrain : MonoBehaviour
                 {
                     if(toChunkDst <= lodInfos[i].distance)
                     {
-                        if(lodMeshes[i].hasMesh)
+                        if(lodIndex != i && lodMeshes[i].hasMesh)
                         {
                             meshFilter.mesh = lodMeshes[i].mesh;
                             lodIndex = i;
