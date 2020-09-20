@@ -6,7 +6,7 @@ using System.Threading;
 
 public class MapGenerator : MonoBehaviour
 {
-    public enum DrawMode { HeightMap, ColorMap, Mesh };
+    public enum DrawMode { FalloffMap, HeightMap, ColorMap, Mesh };
     
     public DrawMode drawMode;
     public Noise.NormalizeMode normalizeMode;
@@ -24,6 +24,8 @@ public class MapGenerator : MonoBehaviour
     public float heightMultiplier;
     public AnimationCurve heightCurve;
 
+    public bool useFalloffMap;
+
     public int seed;
     public Vector2 offset;
 
@@ -34,6 +36,13 @@ public class MapGenerator : MonoBehaviour
     Queue<MapDataThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapDataThreadInfo<MapData>>();
     Queue<MapDataThreadInfo<MeshData>> meshDataThreadInfoQueue = new Queue<MapDataThreadInfo<MeshData>>();
 
+    float[,] falloffMap;
+
+    public void Awake()
+    {
+        falloffMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
+    }
+    
     public void DisplayMapInEditor()
     {
         MapData mapData = GenerateMapData(Vector2.zero);
@@ -42,6 +51,10 @@ public class MapGenerator : MonoBehaviour
         if (drawMode == DrawMode.HeightMap)
         {
             display.DisplayMap(TextureGenerator.CreateTextureFromHeightMap(mapData.heightMap));
+        }
+        else if (drawMode == DrawMode.FalloffMap)
+        {
+            display.DisplayMap(TextureGenerator.CreateTextureFromHeightMap(falloffMap));
         }
         else if (drawMode == DrawMode.ColorMap)
         {
@@ -112,6 +125,11 @@ public class MapGenerator : MonoBehaviour
     {
         float[,] noiseMap = Noise.GenerateNoiseMap(mapChunkSize, mapChunkSize, seed, noiseScale, octaves, persistance, lacunarity, center + offset,normalizeMode);
 
+        if(useFalloffMap)
+            for (int y = 0; y < mapChunkSize; y++)
+                for (int x = 0; x < mapChunkSize; x++)
+                    noiseMap[x,y] = Mathf.Clamp01(noiseMap[x,y] - falloffMap[x,y]);
+                    
         Color[] colorMap = new Color[mapChunkSize * mapChunkSize];
 
         for (int y = 0; y < mapChunkSize; y++)
@@ -134,6 +152,8 @@ public class MapGenerator : MonoBehaviour
         if (noiseScale < 0) noiseScale = 0;
         if (lacunarity < 1) lacunarity = 1;
         if (octaves < 1) octaves = 1;
+        
+        falloffMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
     }
 
     public override int GetHashCode()
