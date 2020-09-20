@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class EndlessTerrain : MonoBehaviour
 {
+    const float scale = 5f;
+    
     public LODInfo[] lodInfos;
 
     public Transform viewer;
@@ -29,7 +31,7 @@ public class EndlessTerrain : MonoBehaviour
 
     void Update()
     {
-        viewerPosition = new Vector2(viewer.position.x, viewer.position.z);
+        viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / scale;
 
         UpdateChunksInRange();
     }
@@ -98,8 +100,10 @@ public class EndlessTerrain : MonoBehaviour
             meshFilter = mesh.AddComponent<MeshFilter>();
             
             meshRenderer.material = material;
-            mesh.transform.position = new Vector3(position.x,0,position.y);
+            mesh.transform.position = new Vector3(position.x,0,position.y) * scale;
             mesh.transform.parent = transform;
+            mesh.transform.localScale = Vector3.one * scale;
+            
             SetVisible(false);
             
             EndlessTerrain.mapGenerator.RequestMapData(OnMapDataRequest,position);
