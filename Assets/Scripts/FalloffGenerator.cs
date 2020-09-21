@@ -22,7 +22,7 @@ public static class FalloffGenerator
     static float Evaluate(float value)
     {
         // Equation taken from this video
-        // https://www.youtube.com/watch?v=COmtTyLCd6I&list=PLFt_AvWsXl0eBW2EiBtl_sxmDtSgZBxB3&index=11
+        // https://www.youtube.com/watch?v=COmtTyLCd6I
         
         float a = 3;
         float b = 2.2f;
